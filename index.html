@@ -65,6 +65,7 @@ const ARQUIVO_HUB = 'Painel_SP-284.html';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let blobUrlAtual = null;
+let perfilAtual = null;
 
 function mostrarApp(){
   document.getElementById('authGate').style.display = 'none';
@@ -92,17 +93,16 @@ async function abrirHub(){
   blobUrlAtual = URL.createObjectURL(blob);
   const frame = document.getElementById('viewerFrame');
 
-  // Repassa a sessão já autenticada aqui pro Hub, pra ele não pedir login de novo.
-  const { data: { session } } = await sb.auth.getSession();
+  // Avisa o Hub que quem está vendo já passou pelo login aqui no loader — o Hub não faz
+  // uma nova checagem de sessão (o arquivo carregado como blob: tem origem "null", e a
+  // API do Supabase rejeita chamadas de autenticação vindas dessa origem com erro 403).
   frame.onload = function(){
     statusEl.style.display = 'none';
     frame.style.display = '';
-    if(session){
-      frame.contentWindow.postMessage({ __supabaseSession: {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token
-      }}, '*');
-    }
+    frame.contentWindow.postMessage({ __acessoLiberado: {
+      nome: perfilAtual ? perfilAtual.nome : '',
+      papel: perfilAtual ? perfilAtual.papel : 'consulta'
+    }}, '*');
   };
   frame.src = blobUrlAtual;
 }
@@ -120,6 +120,7 @@ async function iniciarAposLogin(){
     await sb.auth.signOut();
     return false;
   }
+  perfilAtual = perfil;
   document.getElementById('usuarioLogado').textContent = (perfil.nome||'') + ' · ' + (perfil.papel==='editor'?'Editor':'Consulta');
   mostrarApp();
   abrirHub();
