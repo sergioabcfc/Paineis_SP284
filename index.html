@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>SP-284 · Painéis Tripoloni</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGNsaXBQYXRoIGlkPSJjIj48cGF0aCBkPSJNOCwxNCBIOTIgVjM0IEg2MCBWOTIgSDQwIFYzNCBIOCBaIi8+PC9jbGlwUGF0aD48L2RlZnM+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmZmZmIi8+CjxwYXRoIGQ9Ik04LDE0IEg5MiBWMzQgSDYwIFY5MiBINDAgVjM0IEg4IFoiIGZpbGw9IiMyQzMzNzAiLz4KPGcgY2xpcC1wYXRoPSJ1cmwoI2MpIj48cmVjdCB4PSItMjAiIHk9IjQwIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE4IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjQiIHRyYW5zZm9ybT0icm90YXRlKC0xOCA1MCA1MCkiLz48L2c+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,7 +30,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
 #miniBar span{font-size:11px;color:var(--ink-2);font-family:var(--mono);}
 #miniBar a{font-size:11px;color:var(--blue);text-decoration:none;cursor:pointer;margin-left:auto;}
 #miniBar a:hover{text-decoration:underline;}
-#status{flex:none;padding:16px;font-family:var(--mono);font-size:.8rem;color:var(--ink-2);}
+#status{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:.8rem;color:var(--ink-2);}
+#loadBox{position:relative;width:96px;height:96px;margin-bottom:18px;}
+#loadBoxBg,#loadBoxFill{position:absolute;inset:0;}
+#loadBoxBg{color:var(--line);}
+#loadBoxFill{color:var(--blue);clip-path:inset(100% 0 0 0);transition:clip-path .2s ease-out;}
+#loadBoxBg svg,#loadBoxFill svg{width:100%;height:100%;display:block;}
+#loadPct{font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:2px;}
+#loadSub{font-size:.7rem;color:var(--ink-2);margin-top:6px;opacity:.8;}
 #viewerFrame{flex:1;border:none;width:100%;display:none;}
 </style>
 </head>
@@ -52,7 +60,15 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
     <span id="usuarioLogado"></span>
     <a href="#" onclick="sair(); return false;">Sair</a>
   </div>
-  <div id="status">Carregando painel…</div>
+  <div id="status">
+    <div id="loadBox">
+      <div id="loadBoxBg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="tclipBg"><path d="M8,14 H92 V34 H60 V92 H40 V34 H8 Z"/></clipPath></defs><path d="M8,14 H92 V34 H60 V92 H40 V34 H8 Z" fill="currentColor"/><g clip-path="url(#tclipBg)"><rect x="-20" y="40" width="140" height="18" fill="currentColor" opacity=".4" transform="rotate(-18 50 50)"/></g></svg></div>
+      <div id="loadBoxFill"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="tclipFill"><path d="M8,14 H92 V34 H60 V92 H40 V34 H8 Z"/></clipPath></defs><path d="M8,14 H92 V34 H60 V92 H40 V34 H8 Z" fill="currentColor"/><g clip-path="url(#tclipFill)"><rect x="-20" y="40" width="140" height="18" fill="currentColor" opacity=".4" transform="rotate(-18 50 50)"/></g></svg></div>
+    </div>
+    <div id="loadPct">0%</div>
+    <div id="loadMsg">Carregando painel…</div>
+    <div id="loadSub">Arquivo grande — pode levar alguns segundos na primeira vez</div>
+  </div>
   <iframe id="viewerFrame"></iframe>
 </div>
 
@@ -78,17 +94,55 @@ async function carregarPerfil(userId){
   return data;
 }
 
+function atualizarProgresso(pct){
+  pct = Math.max(0, Math.min(100, pct));
+  const fill = document.getElementById('loadBoxFill');
+  const pctEl = document.getElementById('loadPct');
+  if(fill) fill.style.clipPath = 'inset(' + (100 - pct) + '% 0 0 0)';
+  if(pctEl) pctEl.textContent = Math.round(pct) + '%';
+}
+
 async function abrirHub(){
   const statusEl = document.getElementById('status');
-  statusEl.style.display = '';
-  statusEl.textContent = 'Carregando painel…';
-  const { data, error } = await sb.storage.from(BUCKET).download(ARQUIVO_HUB);
-  if(error){
-    statusEl.textContent = 'Erro ao carregar: ' + error.message;
+  const msgEl = document.getElementById('loadMsg');
+  statusEl.style.display = 'flex';
+  atualizarProgresso(0);
+
+  let chunks, contentType;
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch(
+      SUPABASE_URL + '/storage/v1/object/authenticated/' + BUCKET + '/' + encodeURIComponent(ARQUIVO_HUB),
+      { headers: { 'Authorization': 'Bearer ' + (session ? session.access_token : ''), 'apikey': SUPABASE_ANON_KEY } }
+    );
+    if(!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
+    contentType = resp.headers.get('Content-Type') || 'text/html';
+    const total = parseInt(resp.headers.get('Content-Length') || '0', 10);
+    const reader = resp.body.getReader();
+    chunks = [];
+    let recebido = 0;
+    let simulado = 0;
+    const simTimer = total ? null : setInterval(function(){
+      // Sem Content-Length pra calcular % real: avança devagar até 90% e espera o download real terminar.
+      simulado = Math.min(90, simulado + 2);
+      atualizarProgresso(simulado);
+    }, 300);
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      chunks.push(value);
+      recebido += value.length;
+      if(total) atualizarProgresso(recebido / total * 100);
+    }
+    if(simTimer) clearInterval(simTimer);
+    atualizarProgresso(100);
+  }catch(err){
+    if(msgEl) msgEl.textContent = 'Erro ao carregar: ' + (err && err.message ? err.message : err);
     return;
   }
+
   // Força o tipo certo — sem isso o navegador às vezes mostra o código-fonte em vez de renderizar.
-  const blob = new Blob([data], { type: 'text/html' });
+  const blob = new Blob(chunks, { type: 'text/html' });
   if(blobUrlAtual) URL.revokeObjectURL(blobUrlAtual);
   blobUrlAtual = URL.createObjectURL(blob);
   const frame = document.getElementById('viewerFrame');
