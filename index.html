@@ -9,12 +9,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --bg:#f3f2f1;--card:#ffffff;--line:#d8d6d3;--line-soft:#ece9e5;
-  --ink:#2B2A29;--ink-2:#727271;--blue:#2C3370;--blue-2:#5468C4;--on-blue:#ffffff;
+  --bg:#f3f2f1;--card:#ffffff;--line:#d8d6d3;
+  --ink:#2B2A29;--ink-2:#727271;--blue:#2C3370;--on-blue:#ffffff;
   --font:'Montserrat',sans-serif;--mono:'JetBrains Mono',monospace;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);overflow:hidden;}
 #authGate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
 #authBox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:32px;width:320px;max-width:90vw;box-shadow:0 4px 24px rgba(0,0,0,.08);}
 #authBox h2{margin:0 0 4px;color:var(--blue);font-size:20px;}
@@ -24,32 +24,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
 #authBtn{width:100%;font-family:var(--font);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.3px;padding:10px 16px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;border-radius:8px;}
 #authMsg{margin-top:10px;font-size:12px;color:#b33;min-height:16px;}
 
-#app{display:none;height:100vh;display:none;flex-direction:column;}
-.topbar{background:var(--card);border-bottom:3px solid var(--blue);box-shadow:0 4px 14px rgba(43,42,41,0.08);flex:none;}
-.topbar-inner{max-width:1280px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
-.brand-mark{width:40px;height:40px;flex:none;background:var(--blue);color:var(--on-blue);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:1rem;border-radius:8px;}
-.brand-text h1{font-family:var(--font);font-weight:700;font-size:1.05rem;letter-spacing:0.3px;margin:0;text-transform:uppercase;}
-.brand-text p{margin:2px 0 0 0;font-size:0.7rem;color:var(--ink-2);font-family:var(--mono);}
-.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:14px;}
-.topbar-actions span{font-size:12px;color:var(--ink-2);font-family:var(--mono);}
-.topbar-actions a{font-size:12px;color:var(--blue);text-decoration:none;}
-.topbar-actions a:hover{text-decoration:underline;}
-
-#menu{max-width:900px;margin:0 auto;padding:36px 28px;width:100%;}
-#menu h2{font-family:var(--font);font-size:1.3rem;font-weight:600;margin:0 0 20px;text-transform:uppercase;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-.card{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:4px;padding:20px;cursor:pointer;transition:transform .15s, box-shadow .15s;}
-.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(43,42,41,0.12);}
-.card h3{margin:0 0 6px;font-size:1rem;}
-.card p{margin:0;font-size:.8rem;color:var(--ink-2);}
-.loading{font-family:var(--mono);font-size:.8rem;color:var(--ink-2);padding:20px 28px;}
-
-#viewer{display:none;flex:1;flex-direction:column;}
-#viewerBar{flex:none;background:var(--card);border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:12px;}
-#viewerBar a{font-size:12px;color:var(--blue);text-decoration:none;cursor:pointer;}
-#viewerBar a:hover{text-decoration:underline;}
-#viewerFrame{flex:1;border:none;width:100%;}
-#viewerStatus{font-size:12px;color:var(--ink-2);font-family:var(--mono);}
+#app{display:none;height:100vh;flex-direction:column;}
+#miniBar{flex:none;background:var(--card);border-bottom:1px solid var(--line);padding:6px 14px;display:flex;align-items:center;gap:14px;}
+#miniBar span{font-size:11px;color:var(--ink-2);font-family:var(--mono);}
+#miniBar a{font-size:11px;color:var(--blue);text-decoration:none;cursor:pointer;margin-left:auto;}
+#miniBar a:hover{text-decoration:underline;}
+#status{flex:none;padding:16px;font-family:var(--mono);font-size:.8rem;color:var(--ink-2);}
+#viewerFrame{flex:1;border:none;width:100%;display:none;}
 </style>
 </head>
 <body>
@@ -67,28 +48,12 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
 </div>
 
 <div id="app">
-  <div class="topbar"><div class="topbar-inner">
-    <div class="brand-mark">SP</div>
-    <div class="brand-text"><h1>Painéis de Obra — SP-284</h1><p>Tripoloni Construtora</p></div>
-    <div class="topbar-actions">
-      <span id="usuarioLogado"></span>
-      <a href="#" onclick="fecharVisualizador(); return false;" id="linkVoltar" style="display:none;">← Painéis</a>
-      <a href="#" onclick="sair(); return false;">Sair</a>
-    </div>
-  </div></div>
-
-  <div id="menu">
-    <h2>Painéis disponíveis</h2>
-    <div id="menuGrid" class="grid"></div>
-    <div id="menuLoading" class="loading" style="display:none;">Carregando…</div>
+  <div id="miniBar">
+    <span id="usuarioLogado"></span>
+    <a href="#" onclick="sair(); return false;">Sair</a>
   </div>
-
-  <div id="viewer">
-    <div id="viewerBar">
-      <span id="viewerStatus">Carregando painel…</span>
-    </div>
-    <iframe id="viewerFrame"></iframe>
-  </div>
+  <div id="status">Carregando painel…</div>
+  <iframe id="viewerFrame"></iframe>
 </div>
 
 <script>
@@ -96,13 +61,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
 const SUPABASE_URL = 'https://iedkkjqgwuuxdjqpqzqa.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_7adJjNYdTC7wNj2aCh3RvQ_NPqVSINv';
 const BUCKET = 'paineis';
-
-// Lista fixa dos painéis disponíveis no bucket privado do Supabase Storage.
-// "arquivo" = nome exato do arquivo dentro do bucket "paineis".
-const PAINEIS = [
-  { id:'hub', nome:'Painéis de Obra (Hub)', desc:'Portal com todos os Planos de Ação por disciplina.', arquivo:'Painel_SP-284.html' },
-  { id:'last_planner', nome:'Last Planner System', desc:'Conselho, Lookahead, PPC, Restrições, Indicadores, Ata Semanal.', arquivo:'Painel_Last_Planner_SP284.html' },
-];
+const ARQUIVO_HUB = 'Painel_SP-284.html';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let blobUrlAtual = null;
@@ -118,39 +77,34 @@ async function carregarPerfil(userId){
   return data;
 }
 
-function montarMenu(){
-  const grid = document.getElementById('menuGrid');
-  grid.innerHTML = '';
-  PAINEIS.forEach(p=>{
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = '<h3>'+p.nome+'</h3><p>'+p.desc+'</p>';
-    card.onclick = ()=>abrirPainel(p);
-    grid.appendChild(card);
-  });
-}
-
-async function abrirPainel(p){
-  document.getElementById('menu').style.display = 'none';
-  document.getElementById('viewer').style.display = 'flex';
-  document.getElementById('linkVoltar').style.display = '';
-  document.getElementById('viewerStatus').textContent = 'Carregando ' + p.nome + '…';
-  const { data, error } = await sb.storage.from(BUCKET).download(p.arquivo);
+async function abrirHub(){
+  const statusEl = document.getElementById('status');
+  statusEl.style.display = '';
+  statusEl.textContent = 'Carregando painel…';
+  const { data, error } = await sb.storage.from(BUCKET).download(ARQUIVO_HUB);
   if(error){
-    document.getElementById('viewerStatus').textContent = 'Erro ao carregar: ' + error.message;
+    statusEl.textContent = 'Erro ao carregar: ' + error.message;
     return;
   }
+  // Força o tipo certo — sem isso o navegador às vezes mostra o código-fonte em vez de renderizar.
+  const blob = new Blob([data], { type: 'text/html' });
   if(blobUrlAtual) URL.revokeObjectURL(blobUrlAtual);
-  blobUrlAtual = URL.createObjectURL(data);
-  document.getElementById('viewerFrame').src = blobUrlAtual;
-  document.getElementById('viewerStatus').textContent = p.nome;
-}
+  blobUrlAtual = URL.createObjectURL(blob);
+  const frame = document.getElementById('viewerFrame');
 
-function fecharVisualizador(){
-  document.getElementById('viewer').style.display = 'none';
-  document.getElementById('linkVoltar').style.display = 'none';
-  document.getElementById('menu').style.display = '';
-  document.getElementById('viewerFrame').src = 'about:blank';
+  // Repassa a sessão já autenticada aqui pro Hub, pra ele não pedir login de novo.
+  const { data: { session } } = await sb.auth.getSession();
+  frame.onload = function(){
+    statusEl.style.display = 'none';
+    frame.style.display = '';
+    if(session){
+      frame.contentWindow.postMessage({ __supabaseSession: {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      }}, '*');
+    }
+  };
+  frame.src = blobUrlAtual;
 }
 
 function sair(){
@@ -167,8 +121,8 @@ async function iniciarAposLogin(){
     return false;
   }
   document.getElementById('usuarioLogado').textContent = (perfil.nome||'') + ' · ' + (perfil.papel==='editor'?'Editor':'Consulta');
-  montarMenu();
   mostrarApp();
+  abrirHub();
   return true;
 }
 
