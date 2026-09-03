@@ -98,7 +98,7 @@ async function abrirHub(){
   // API do Supabase rejeita chamadas de autenticação vindas dessa origem com erro 403).
   frame.onload = function(){
     statusEl.style.display = 'none';
-    frame.style.display = '';
+    frame.style.display = 'block';
     frame.contentWindow.postMessage({ __acessoLiberado: {
       nome: perfilAtual ? perfilAtual.nome : '',
       papel: perfilAtual ? perfilAtual.papel : 'consulta'
