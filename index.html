@@ -133,6 +133,25 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
   </div>
 </div>
 
+<script>
+/* Decide o que a tela de acesso mostra ANTES de baixar a biblioteca do Supabase do CDN.
+   Sem isto, o formulario chegava a ser pintado e so sumia depois do download + verificacao
+   da sessao -- o "piscar" da caixa de e-mail e senha em quem ja estava logado. */
+(function(){
+  try{
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0){
+        var f = document.getElementById('authForm');
+        var l = document.getElementById('authLoading');
+        if(f) f.style.display = 'none';
+        if(l) l.style.display = 'block';
+        return;
+      }
+    }
+  }catch(e){}
+})();
+</script>
 <div id="app">
   <div id="status">
     <div id="loadBox">
