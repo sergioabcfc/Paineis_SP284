@@ -43,6 +43,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
 #authBtn:active,#authBtnGate:active{transform:translateY(1px);}
 #authMsg,#authMsgGate{margin-top:14px;font-size:.78rem;color:#a8412f;min-height:18px;text-align:center;}
 #capsLockAviso,#capsLockAvisoGate{display:none;margin:-8px 0 12px;font-size:.72rem;color:#9c6308;}
+#authGate .gate-extra{margin-top:16px;text-align:center;}
+#authGate .gate-extra a{font-size:.76rem;color:#2C3370;text-decoration:none;border-bottom:1px solid rgba(44,51,112,.3);padding-bottom:1px;}
+#authGate .gate-extra a:hover{color:#3B4490;}
+#authCadastro h2{margin:8px 0 6px;color:#2B2A29;font-size:1.7rem;font-weight:800;letter-spacing:-.4px;}
+#authCadastro input{width:100%;box-sizing:border-box;padding:12px 14px;margin:0 0 16px;border:1px solid #d8d6d3;border-radius:10px;background:#fff;font-family:inherit;font-size:.92rem;color:#2B2A29;}
+#authCadastro input:focus{outline:none;border-color:#2C3370;box-shadow:0 0 0 3px rgba(44,51,112,.13);}
+#cadBtn{width:100%;padding:13px 16px;border:none;border-radius:10px;background:#2C3370;color:#fff;font-family:inherit;font-weight:700;font-size:.76rem;text-transform:uppercase;letter-spacing:1.1px;cursor:pointer;}
+#cadBtn:hover{background:#3B4490;}
 #authLoading{display:none;text-align:center;padding:4px 0;}
 #authLoading .lm{position:relative;width:88px;height:88px;margin:0 auto 20px;}
 #authLoading .lm > div{position:absolute;inset:0;}
@@ -94,6 +102,23 @@ html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);f
         <input id="authSenha" type="password" autocomplete="current-password">
         <div id="capsLockAviso">Caps Lock ativado</div>
         <button id="authBtn">Entrar</button>
+        <div class="gate-extra"><a href="#" id="linkCadastro">Primeiro acesso &mdash; criar minha senha</a></div>
+      </div>
+      <!-- Cadastro pelo proprio usuario. Ele escolhe a propria senha: ela nunca passa pelo
+           administrador nem por e-mail. Criar a conta NAO da acesso a nada -- o painel so abre
+           depois que o administrador cria a linha correspondente em profiles. -->
+      <div id="authCadastro" style="display:none;">
+        <span class="gate-eyebrow">Primeiro acesso</span>
+        <h2>Criar minha senha</h2>
+        <p class="gate-sub">Use seu e-mail corporativo. Depois de criar, avise o administrador para liberar seu acesso.</p>
+        <label class="gate-label" for="cadEmail">E-mail</label>
+        <input id="cadEmail" type="email" autocomplete="username">
+        <label class="gate-label" for="cadSenha">Senha</label>
+        <input id="cadSenha" type="password" autocomplete="new-password">
+        <label class="gate-label" for="cadSenha2">Repita a senha</label>
+        <input id="cadSenha2" type="password" autocomplete="new-password">
+        <button id="cadBtn">Criar acesso</button>
+        <div class="gate-extra"><a href="#" id="linkVoltarLogin">Voltar para o login</a></div>
       </div>
       <div id="authLoading">
         <div class="lm">
@@ -267,6 +292,42 @@ document.getElementById('authBtn').addEventListener('click', async ()=>{
   msgEl.textContent = '';
   mostrarCarregandoGate(0, 'Entrando');
   iniciarAposLogin();
+});
+
+function trocarPainelGate(qual){
+  var f = document.getElementById('authForm');
+  var c = document.getElementById('authCadastro');
+  var l = document.getElementById('authLoading');
+  if(f) f.style.display = (qual === 'login') ? '' : 'none';
+  if(c) c.style.display = (qual === 'cadastro') ? '' : 'none';
+  if(l) l.style.display = (qual === 'carregando') ? 'block' : 'none';
+  document.getElementById('authMsg').textContent = '';
+}
+document.getElementById('linkCadastro').addEventListener('click', function(e){ e.preventDefault(); trocarPainelGate('cadastro'); });
+document.getElementById('linkVoltarLogin').addEventListener('click', function(e){ e.preventDefault(); trocarPainelGate('login'); });
+
+document.getElementById('cadBtn').addEventListener('click', async function(){
+  var email = document.getElementById('cadEmail').value.trim();
+  var s1 = document.getElementById('cadSenha').value;
+  var s2 = document.getElementById('cadSenha2').value;
+  var msg = document.getElementById('authMsg');
+  msg.style.color = '#a8412f';
+  if(!email){ msg.textContent = 'Informe seu e-mail.'; return; }
+  if(s1.length < 8){ msg.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+  if(s1 !== s2){ msg.textContent = 'As duas senhas nao conferem.'; return; }
+  msg.style.color = '#727271'; msg.textContent = 'Criando acesso...';
+  var r = await sb.auth.signUp({ email: email, password: s1 });
+  if(r.error){
+    msg.style.color = '#a8412f';
+    msg.textContent = /already/i.test(r.error.message)
+      ? 'Ja existe um acesso com esse e-mail. Use Entrar, ou peca ao administrador para liberar.'
+      : 'Nao consegui criar: ' + r.error.message;
+    return;
+  }
+  try{ await sb.auth.signOut(); }catch(e){}
+  trocarPainelGate('login');
+  msg.style.color = '#4f7a5c';
+  msg.textContent = 'Acesso criado. Avise o administrador para liberar seu perfil.';
 });
 
 if(gateJaLogado()) mostrarCarregandoGate(0, 'Entrando');
