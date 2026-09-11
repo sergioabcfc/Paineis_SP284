@@ -267,8 +267,13 @@ async function iniciarAposLogin(){
   if(!user) return false;
   const perfil = await carregarPerfil(user.id);
   if(!perfil){
-    document.getElementById('authMsg').textContent = 'Seu usuário não tem permissão. Fale com o administrador.';
+    // Conta criada, mas ainda sem liberacao em profiles. Devolve o formulario -- antes a tela
+    // ficava parada no indicador de carregamento, como se tivesse travado.
     await sb.auth.signOut();
+    trocarPainelGate('login');
+    var m = document.getElementById('authMsg');
+    m.style.color = '#9c6308';
+    m.textContent = 'Acesso criado, mas ainda não liberado. Peça ao administrador para liberar seu perfil.';
     return false;
   }
   perfilAtual = perfil;
