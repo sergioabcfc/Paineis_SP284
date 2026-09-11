@@ -266,6 +266,14 @@ async function iniciarAposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if(!user) return false;
   const perfil = await carregarPerfil(user.id);
+  if(perfil && perfil.papel === 'bloqueado'){
+    await sb.auth.signOut();
+    trocarPainelGate('login');
+    var mb = document.getElementById('authMsg');
+    mb.style.color = '#a8412f';
+    mb.textContent = 'Seu acesso foi suspenso. Fale com o administrador.';
+    return false;
+  }
   if(!perfil){
     // Conta criada, mas ainda sem liberacao em profiles. Devolve o formulario -- antes a tela
     // ficava parada no indicador de carregamento, como se tivesse travado.
