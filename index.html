@@ -234,7 +234,7 @@ async function abrirHub(){
     const { data: { session } } = await sb.auth.getSession();
     const resp = await fetch(
       SUPABASE_URL + '/storage/v1/object/authenticated/' + BUCKET + '/' + encodeURIComponent(ARQUIVO_HUB),
-      { headers: { 'Authorization': 'Bearer ' + (session ? session.access_token : ''), 'apikey': SUPABASE_ANON_KEY } }
+      { cache: 'no-store', headers: { 'Authorization': 'Bearer ' + (session ? session.access_token : ''), 'apikey': SUPABASE_ANON_KEY } }
     );
     if(!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
     contentType = resp.headers.get('Content-Type') || 'text/html';
