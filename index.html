@@ -171,6 +171,10 @@ const SUPABASE_URL = 'https://iedkkjqgwuuxdjqpqzqa.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_7adJjNYdTC7wNj2aCh3RvQ_NPqVSINv';
 const BUCKET = 'paineis';
 const ARQUIVO_HUB = 'Painel_SP-284.html';
+// Perfil "fiscal" (fiscalização externa): abre direto o Levantamentos de Drenagem, sem o Hub.
+// O Storage só entrega esse arquivo para esse perfil -- esconder aqui é só conveniência.
+const ARQUIVO_FISCAL = 'Levantamentos_Fiscal.html';
+function ehFiscal(){ return !!(perfilAtual && perfilAtual.papel === 'fiscal'); }
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -233,7 +237,7 @@ async function abrirHub(){
   try{
     const { data: { session } } = await sb.auth.getSession();
     const resp = await fetch(
-      SUPABASE_URL + '/storage/v1/object/authenticated/' + BUCKET + '/' + encodeURIComponent(ARQUIVO_HUB),
+      SUPABASE_URL + '/storage/v1/object/authenticated/' + BUCKET + '/' + encodeURIComponent(ehFiscal() ? ARQUIVO_FISCAL : ARQUIVO_HUB),
       { cache: 'no-store', headers: { 'Authorization': 'Bearer ' + (session ? session.access_token : ''), 'apikey': SUPABASE_ANON_KEY } }
     );
     if(!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
@@ -267,7 +271,8 @@ async function abrirHub(){
   // Usamos srcdoc (não um blob:) para que o Hub carregado herde a MESMA origem desta
   // página: assim ele enxerga a sessão já autenticada aqui (login e Storage funcionam
   // de verdade dentro dele, sem precisar repassar nada por postMessage).
-  const html = await new Blob(chunks, { type: 'text/html' }).text();
+  let html = await new Blob(chunks, { type: 'text/html' }).text();
+  if(ehFiscal()) html = html.replace('<head>', '<head><script>window.__ACESSO_OK__=true;window.__MODO_FISCAL__=true;<' + '/script>');
   const frame = document.getElementById('viewerFrame');
   frame.onload = function(){
     mostrarApp();
